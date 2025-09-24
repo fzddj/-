@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8" />
+	<title>添加出行计划</title>
+	<link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+	<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+	<script src="https://unpkg.com/element-plus"></script>
+	<style>.container{max-width:600px;margin:20px auto}</style>
+</head>
+<body>
+	<div id="app" class="container">
+		<h3 style="margin-bottom:10px">添加出行计划信息</h3>
+		<el-form :model="form" :rules="rules" ref="formRef" label-width="110px">
+			<el-form-item label="出差人员" prop="user_name"><el-input v-model="form.user_name" /></el-form-item>
+			<el-form-item label="出差人职位" prop="duty"><el-input v-model="form.duty" /></el-form-item>
+			<el-form-item label="出行方式" prop="trip_mode_id">
+				<el-select v-model="form.trip_mode_id" placeholder="请选择">
+					<el-option v-for="m in tripModes" :key="m.id" :label="m.name" :value="m.id" />
+				</el-select>
+			</el-form-item>
+			<el-form-item label="出行日期" prop="depart_time"><el-input v-model="form.depart_time" placeholder="yyyy-MM-dd" /></el-form-item>
+			<el-form-item>
+				<el-button type="primary" @click="submit">添加</el-button>
+				<el-button @click="back">返回</el-button>
+			</el-form-item>
+		</el-form>
+	</div>
+
+	<script>
+	const { createApp, ref, onMounted } = Vue
+	createApp({
+		setup(){
+			const formRef = ref()
+			const form = ref({ user_name:'', duty:'', trip_mode_id:'', depart_time:'' })
+			const tripModes = ref([])
+			const rules = {
+				user_name: [{ required:true, message:'请输入出差人员', trigger:'blur' }],
+				duty: [{ required:true, message:'请输入职位', trigger:'blur' }],
+				trip_mode_id: [{ required:true, message:'请选择出行方式', trigger:'change' }],
+				depart_time: [ { required:true, message:'请输入日期', trigger:'blur' }, { pattern:/^\d{4}-\d{2}-\d{2}$/, message:'日期格式不正确', trigger:'blur' } ]
+			}
+			function loadTripModes(){ fetch('/trip-modes').then(r=>r.json()).then(d=>tripModes.value=d||[]) }
+			function submit(){ formRef.value.validate(v=>{ if(!v) return; fetch('/schedules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form.value)}).then(()=>location.href='/index') }) }
+			function back(){ location.href='/index' }
+			onMounted(()=>loadTripModes())
+			return { formRef, form, tripModes, rules, submit, back }
+		}
+	}).use(ElementPlus).mount('#app')
+	</script>
+</body>
+</html>
+
+

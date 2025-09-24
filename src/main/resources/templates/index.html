@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8" />
+	<title>员工出差管理系统</title>
+	<link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+	<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+	<script src="https://unpkg.com/element-plus"></script>
+    <style>
+        .container{max-width:1200px;margin:20px auto}
+        .layout{display:flex;gap:16px}
+        .left{flex:1}
+        .right{flex:1}
+        .summary{margin:12px 0}
+        .el-table colgroup col[name="gutter"],
+        .el-table th.gutter,
+        .el-table td.gutter { display: none !important; width: 0 !important; }
+    </style>
+</head>
+<body>
+	<div id="app" class="container">
+		<h2 style="margin-bottom:10px">员工出差管理系统</h2>
+		<div style="display:flex;gap:10px;margin-bottom:12px">
+			<el-select v-model="queryForm.tripModeId" placeholder="全部" clearable style="width:220px">
+				<el-option label="全部" :value="''"></el-option>
+				<el-option v-for="m in tripModes" :key="m.id" :label="m.name" :value="m.id"></el-option>
+			</el-select>
+			<el-button type="primary" @click="loadSchedules">查询</el-button>
+			<el-button @click="goAdd">添加</el-button>
+		</div>
+
+        <div class="layout">
+        <div class="left">
+        <el-descriptions :column="1" border style="margin-bottom:8px">
+            <el-descriptions-item label="出差人员">{{ selected?.user_name || '-' }}</el-descriptions-item>
+        </el-descriptions>
+        <el-descriptions :column="1" border style="margin-bottom:12px">
+            <el-descriptions-item label="职位">{{ selected?.duty || '-' }}</el-descriptions-item>
+        </el-descriptions>
+        <el-table :data="rows" border stripe style="width:100%" highlight-current-row :current-row="selected" @row-click="onRowClick">
+            <el-table-column label="出行方式" width="140">
+                <template #default="{row}">{{ row.trip_mode_name || modeName(row.trip_mode_id) }}</template>
+            </el-table-column>
+			<el-table-column label="行程状态" width="120">
+				<template #default="{row}">{{ row.status===1?'已取消':'未出行' }}</template>
+			</el-table-column>
+			<el-table-column label="操作" width="180">
+				<template #default="{row}">
+					<el-button type="primary" link @click="goEdit(row)">编辑</el-button>
+					<el-button type="warning" link @click="cancel(row)">取消</el-button>
+					<el-popconfirm title="确认删除该行程？" @confirm="remove(row)">
+						<template #reference><el-button type="danger" link>删除</el-button></template>
+					</el-popconfirm>
+				</template>
+			</el-table-column>
+		</el-table>
+        </div>
+
+        <div class="right">
+            <el-card header="详细信息">
+                <el-descriptions :column="1" border>
+                    <el-descriptions-item label="出差人员">{{ selected?.user_name || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="职位">{{ selected?.duty || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="出行方式">{{ selected ? (selected.trip_mode_name || modeName(selected.trip_mode_id)) : '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="出行日期">{{ selected?.depart_time || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="行程状态">{{ selected && selected.status===1 ? '已取消' : (selected ? '未出行' : '-') }}</el-descriptions-item>
+                </el-descriptions>
+            </el-card>
+        </div>
+        </div>
+	</div>
+
+	<script>
+    const { createApp, ref, onMounted } = Vue
+	createApp({
+		setup(){
+			const tripModes = ref([])
+			const rows = ref([])
+			const queryForm = ref({ tripModeId: '' })
+            const selected = ref(null)
+
+			const modeName = id => (tripModes.value.find(m=>m.id===id)||{}).name || id
+
+			function loadTripModes(){
+				return fetch('/trip-modes').then(r=>r.json()).then(data=>{ tripModes.value = data || [] })
+			}
+            function loadSchedules(){
+				const id = queryForm.value.tripModeId
+				const url = id? ('/schedules?tripModeId='+id) : '/schedules'
+                fetch(url).then(r=>r.json()).then(d=> { 
+                    rows.value = d || []
+                    if (rows.value.length && !selected.value) selected.value = rows.value[0]
+                })
+			}
+			function goAdd(){ location.href='/add' }
+			function goEdit(row){ location.href='/edit?id='+row.id }
+			function cancel(row){ fetch('/schedules/'+row.id+'/cancel',{method:'PUT'}).then(loadSchedules) }
+			function remove(row){ fetch('/schedules/'+row.id,{method:'DELETE'}).then(loadSchedules) }
+            function onRowClick(row){ selected.value = row }
+
+            onMounted(()=>{ loadTripModes().then(loadSchedules) })
+            return { tripModes, rows, queryForm, selected, loadSchedules, goAdd, goEdit, cancel, remove, modeName, onRowClick }
+		}
+	}).use(ElementPlus).mount('#app')
+	</script>
+</body>
+</html>
+
+

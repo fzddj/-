@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8" />
+	<title>编辑出行计划</title>
+	<link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+	<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+	<script src="https://unpkg.com/element-plus"></script>
+	<style>.container{max-width:600px;margin:20px auto}</style>
+</head>
+<body>
+	<div id="app" class="container">
+		<h3 style="margin-bottom:10px">编辑出行计划</h3>
+		<el-form :model="form" label-width="110px">
+			<el-form-item label="出差人员"><el-input v-model="form.user_name" /></el-form-item>
+			<el-form-item label="出差人职位"><el-input v-model="form.duty" /></el-form-item>
+			<el-form-item label="出行方式">
+				<el-select v-model="form.trip_mode_id">
+					<el-option v-for="m in tripModes" :key="m.id" :label="m.name" :value="m.id" />
+				</el-select>
+			</el-form-item>
+			<el-form-item label="出行日期"><el-input v-model="form.depart_time" placeholder="yyyy-MM-dd" /></el-form-item>
+			<el-form-item label="行程状态">
+				<el-select v-model="form.status"><el-option label="未出行" :value="0" /><el-option label="已取消" :value="1" /></el-select>
+			</el-form-item>
+			<el-form-item><el-button type="primary" @click="save">保存</el-button><el-button @click="back">返回</el-button></el-form-item>
+		</el-form>
+	</div>
+
+	<script>
+	const { createApp, ref, onMounted } = Vue
+	createApp({
+		setup(){
+			const form = ref({ id:'', user_name:'', duty:'', trip_mode_id:'', depart_time:'', status:0 })
+			const tripModes = ref([])
+			const id = new URLSearchParams(location.search).get('id')
+			function loadTripModes(){ fetch('/trip-modes').then(r=>r.json()).then(d=> tripModes.value=d||[]) }
+			function loadDetail(){ fetch('/schedules/'+id).then(r=>r.json()).then(d=> Object.assign(form.value,d||{})) }
+			function save(){ fetch('/schedules/'+id,{ method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(form.value) }).then(()=>location.href='/index') }
+			function back(){ location.href='/index' }
+			onMounted(()=>{ loadTripModes(); loadDetail(); })
+			return { form, tripModes, save, back }
+		}
+	}).use(ElementPlus).mount('#app')
+	</script>
+</body>
+</html>
+
+

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lc.Mapper.ScheduleMapper">
+
+	<select id="findByTripModeId" parameterType="long" resultType="com.lc.Entity.Schedule">
+		select s.id, s.user_name, s.duty, s.trip_mode_id, tm.name as trip_mode_name, s.status, s.depart_time
+		from schedule s left join trip_mode tm on tm.id = s.trip_mode_id
+		<where>
+			<if test="tripModeId != null">
+				trip_mode_id = #{tripModeId}
+			</if>
+		</where>
+	</select>
+
+	<select id="findAll" resultType="com.lc.Entity.Schedule">
+		select s.id, s.user_name, s.duty, s.trip_mode_id, tm.name as trip_mode_name, s.status, s.depart_time
+		from schedule s left join trip_mode tm on tm.id = s.trip_mode_id
+	</select>
+
+	<select id="findById" parameterType="long" resultType="com.lc.Entity.Schedule">
+		select s.id, s.user_name, s.duty, s.trip_mode_id, tm.name as trip_mode_name, s.status, s.depart_time
+		from schedule s left join trip_mode tm on tm.id = s.trip_mode_id
+		where s.id = #{id}
+	</select>
+
+	<insert id="insert" parameterType="com.lc.Entity.Schedule" useGeneratedKeys="true" keyProperty="id">
+		insert into schedule(user_name, duty, trip_mode_id, status, depart_time)
+		values(#{user_name}, #{duty}, #{trip_mode_id}, #{status}, #{depart_time})
+	</insert>
+
+	<update id="update" parameterType="com.lc.Entity.Schedule">
+		update schedule
+		set user_name=#{user_name},
+			duty=#{duty},
+			trip_mode_id=#{trip_mode_id},
+			status=#{status},
+			depart_time=#{depart_time}
+		where id=#{id}
+	</update>
+
+	<delete id="deleteById" parameterType="long">
+		delete from schedule where id = #{id}
+	</delete>
+
+	<update id="cancelById">
+		update schedule set status = #{cancelStatus} where id = #{id}
+	</update>
+
+</mapper>
+
+
